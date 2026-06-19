@@ -1,0 +1,188 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+
+<head>
+	<title>emplist</title>
+	<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+	<link rel="stylesheet" type="text/css" href="css/style.css" />
+</head>
+
+<body>
+	<div id="wrap">
+		<div id="top_content">
+			<div id="header">
+				<div id="rightheader">
+					<p>
+						2009/11/20
+						<br />
+						<a href="javascript:void(0)" id="logoutBtn" style="color: white; text-decoration: none;">安全退出</a>
+					</p>
+				</div>
+				<div id="topheader">
+					<h1 id="title">
+						<a href="#">main</a>
+					</h1>
+				</div>
+				<div id="navigation">
+				</div>
+			</div>
+			<div id="content">
+				<p id="whereami">
+
+					<img id="userAvatar" src="https://picsum.photos/30/30"
+						style="width:30px;height:30px;border-radius:50%;vertical-align:middle;margin-right:8px;cursor:pointer;"
+						title="点击更换头像">
+					欢迎 <span id="welcome"></span>
+				</p>
+				<h1>
+					Welcome!
+				</h1>
+				<table class="table" id="empTable">
+					<tr class="table_header">
+						<td>
+							ID
+						</td>
+						<td>
+							Name
+						</td>
+						<td>
+							Photo
+						</td>
+						<td>
+							Salary
+						</td>
+						<td>
+							Age
+						</td>
+						<td>
+							Operation
+						</td>
+					</tr>
+
+					<tbody id="empTbody">
+					</tbody>
+				</table>
+				<p>
+					<input type="button" class="button" value="Add Employee" onclick="location='addEmp.html'" />
+				</p>
+			</div>
+		</div>
+		<div id="footer">
+			<div id="footer_bg">
+				ABC@126.com
+			</div>
+		</div>
+	</div>
+
+	<input type="file" id="avatarFile" accept="image/*" style="display:none;">
+
+	<script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+	<script>
+
+		window.onload = function () {
+			if (!localStorage.getItem('realname')) {
+				alert('请先登录');
+				window.location.href = 'login.html';
+			}
+
+			document.getElementById('welcome').innerText = localStorage.getItem('realname');
+
+			if (localStorage.getItem('userAvatar')) {
+				document.getElementById('userAvatar').src = localStorage.getItem('userAvatar');
+			}
+			loadEmpList();
+
+			bindAvatarEvent();
+		}
+
+
+		function bindAvatarEvent() {
+			const avatar = document.getElementById('userAvatar');
+			const fileInput = document.getElementById('avatarFile');
+
+
+			avatar.onclick = function () {
+				fileInput.click();
+			}
+
+			fileInput.onchange = function (e) {
+				const file = e.target.files[0];
+				if (file) {
+					const url = URL.createObjectURL(file);
+					avatar.src = url;
+
+					localStorage.setItem('userAvatar', url);
+				}
+			}
+		}
+
+
+		function loadEmpList() {
+			axios.get('http://localhost:8989/emp/list')
+				.then(res => {
+					if (res.data.code === 200) {
+						const empList = res.data.data;
+						const tbody = document.getElementById('empTbody');
+						tbody.innerHTML = '';
+
+						empList.forEach((emp, index) => {
+							const tr = document.createElement('tr');
+
+							tr.className = index % 2 === 0 ? 'row1' : 'row2';
+
+							tr.innerHTML = `
+									<td>${emp.id}</td>
+									<td>${emp.name}</td>
+									<td>
+										<img src="http://localhost:8989${emp.path}" style="height: 60px;" alt="头像">
+									</td>
+									<td>${emp.salary}</td>
+									<td>${emp.age}</td>
+									<td>
+										<a href="javascript:deleteEmp(${emp.id})">delete emp</a>&nbsp;
+										<a href="updateEmp.html?id=${emp.id}">update emp</a>
+									</td>
+								`;
+							tbody.appendChild(tr);
+						});
+					}
+				})
+				.catch(err => {
+					alert('加载员工列表失败！请检查后端是否启动');
+				});
+		}
+
+
+		function deleteEmp(id) {
+			if (confirm('确定要删除该员工吗？')) {
+				axios.get('http://localhost:8989/emp/delete?id=' + id)
+					.then(res => {
+						if (res.data.code === 200) {
+							alert('删除成功');
+							loadEmpList();
+						} else {
+							alert(res.data.msg);
+						}
+					})
+					.catch(err => {
+						alert('删除失败');
+					});
+			}
+		}
+
+
+		document.getElementById('logoutBtn').onclick = function () {
+			axios.get('http://localhost:8989/user/logout?token=' + localStorage.getItem('token'))
+				.then(res => {
+					localStorage.clear();
+					alert('退出成功');
+					window.location.href = 'login.html';
+				})
+				.catch(err => {
+					alert('退出失败');
+				});
+		}
+	</script>
+</body>
+
+</html>

@@ -1,0 +1,151 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+
+<head>
+	<title>add Emp</title>
+	<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+	<link rel="stylesheet" type="text/css" href="css/style.css" />
+</head>
+
+<body>
+	<div id="wrap">
+		<div id="top_content">
+			<div id="header">
+				<div id="rightheader">
+					<p>
+						2009/11/20
+						<br />
+					</p>
+				</div>
+				<div id="topheader">
+					<h1 id="title">
+						<a href="#">Main</a>
+					</h1>
+				</div>
+				<div id="navigation">
+				</div>
+			</div>
+			<div id="content">
+				<p id="whereami">
+				</p>
+				<h1>
+					add Emp info:
+				</h1>
+				<form action="emplist.html" method="post">
+					<table cellpadding="0" cellspacing="0" border="0" class="form_table">
+						<tr>
+							<td valign="middle" align="right">
+								name:
+							</td>
+							<td valign="middle" align="left">
+								<input type="text" class="inputgri" name="name" id="name" />
+							</td>
+						</tr>
+						<tr>
+							<td valign="middle" align="right">
+								photo:
+							</td>
+							<td valign="middle" align="left">
+								<input type="file" name="photo" id="avatarInput" accept="image/*" />
+								<br />
+								<img id="avatarPreview" alt="头像预览" style="height: 60px; margin-top: 10px; display: none;" />
+							</td>
+						</tr>
+						<tr>
+							<td valign="middle" align="right">
+								salary:
+							</td>
+							<td valign="middle" align="left">
+								<input type="text" class="inputgri" name="salary" id="salary" />
+							</td>
+						</tr>
+						<tr>
+							<td valign="middle" align="right">
+								age:
+							</td>
+							<td valign="middle" align="left">
+								<input type="text" class="inputgri" name="age" id="age" />
+							</td>
+						</tr>
+					</table>
+					<p>
+						<input type="submit" class="button" value="Confirm" id="addBtn" />
+						&nbsp;&nbsp;
+						<a href="emplist.html" style="text-decoration: none; color: #333;">返回列表</a>
+					</p>
+				</form>
+			</div>
+		</div>
+		<div id="footer">
+			<div id="footer_bg">
+				ABC@126.com
+			</div>
+		</div>
+	</div>
+
+
+	<script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+	<script>
+		let avatarPath = '';
+
+
+		document.getElementById('avatarInput').onchange = function (e) {
+			const file = e.target.files[0];
+			if (file) {
+				const formData = new FormData();
+				formData.append('file', file);
+
+				axios.post('http://localhost:8989/emp/upload', formData, {
+					headers: { 'Content-Type': 'multipart/form-data' }
+				})
+					.then(res => {
+						if (res.data.code === 200) {
+							avatarPath = res.data.path;
+
+							document.getElementById('avatarPreview').src = 'http://localhost:8989' + avatarPath;
+							document.getElementById('avatarPreview').style.display = 'block';
+						} else {
+							alert('头像上传失败');
+						}
+					})
+					.catch(err => {
+						alert('头像上传失败！请检查后端是否启动');
+					});
+			}
+		}
+
+
+		document.getElementById('addBtn').onclick = function () {
+			const name = document.getElementById('name').value.trim();
+			const salary = document.getElementById('salary').value.trim();
+			const age = document.getElementById('age').value.trim();
+
+			if (!name || !salary || !age || !avatarPath) {
+				alert('请填写完整信息并上传头像');
+				return false;
+			}
+
+			axios.post('http://localhost:8989/emp/add', {
+				name: name,
+				path: avatarPath,
+				salary: salary,
+				age: age
+			})
+				.then(res => {
+					if (res.data.code === 200) {
+						alert('添加成功');
+						window.location.href = 'emplist.html';
+					} else {
+						alert(res.data.msg);
+					}
+				})
+				.catch(err => {
+					alert('添加失败！请检查后端是否启动');
+				});
+
+			return false;
+		}
+	</script>
+</body>
+
+</html>
